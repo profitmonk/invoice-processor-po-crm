@@ -1,0 +1,687 @@
+app OpenSaaS {
+  wasp: {
+    version: "^0.18.0"
+  },
+
+  title: "My Open SaaS App",
+
+  head: [
+    "<link rel='icon' href='/favicon.ico' />",
+    "<meta charset='utf-8' />",
+    "<meta name='description' content='Your apps main description and features.' />",
+    "<meta name='author' content='Your (App) Name' />",
+    "<meta name='keywords' content='saas, solution, product, app, service' />",
+    
+    "<meta property='og:type' content='website' />",
+    "<meta property='og:title' content='Your Open SaaS App' />",
+    "<meta property='og:site_name' content='Your Open SaaS App' />",
+    "<meta property='og:url' content='https://your-saas-app.com' />",
+    "<meta property='og:description' content='Your apps main description and features.' />",
+    "<meta property='og:image' content='https://your-saas-app.com/public-banner.webp' />",
+    "<meta name='twitter:image' content='https://your-saas-app.com/public-banner.webp' />",
+    "<meta name='twitter:image:width' content='800' />",
+    "<meta name='twitter:image:height' content='400' />",
+    "<meta name='twitter:card' content='summary_large_image' />",
+    // TODO: You can put your Plausible analytics scripts below (https://docs.opensaas.sh/guides/analytics/):
+    // NOTE: Plausible does not use Cookies, so you can simply add the scripts here.
+    // Google, on the other hand, does, so you must instead add the script dynamically
+    // via the Cookie Consent component after the user clicks the "Accept" cookies button.
+    "<script defer data-domain='<your-site-id>' src='https://plausible.io/js/script.js'></script>",  // for production
+    "<script defer data-domain='<your-site-id>' src='https://plausible.io/js/script.local.js'></script>",  // for development
+  ],
+
+  // 🔐 Auth out of the box! https://wasp.sh/docs/auth/overview
+  auth: {
+    userEntity: User,
+    methods: {
+      // NOTE: If you decide to not use email auth, make sure to also delete the related routes and pages below.
+      //   (RequestPasswordReset(Route|Page), PasswordReset(Route|Page), EmailVerification(Route|Page))
+      email: {
+        fromField: {
+          name: "Open SaaS App",
+          email: "aish@stronexcapital.com"
+        },
+        emailVerification: {
+          clientRoute: EmailVerificationRoute,
+          getEmailContentFn: import { getVerificationEmailContent } from "@src/auth/email-and-pass/emails",
+        },
+        passwordReset: {
+          clientRoute: PasswordResetRoute,
+          getEmailContentFn: import { getPasswordResetEmailContent } from "@src/auth/email-and-pass/emails",
+        },
+        userSignupFields: import { getEmailUserFields } from "@src/auth/userSignupFields",
+      },
+      // Uncomment to enable Google Auth (check https://wasp.sh/docs/auth/social-auth/google for setup instructions):
+       google: { // Guide for setting up Auth via Google
+         userSignupFields: import { getGoogleUserFields } from "@src/auth/userSignupFields",
+         configFn: import { getGoogleAuthConfig } from "@src/auth/userSignupFields",
+       },
+      // Uncomment to enable GitHub Auth (check https://wasp.sh/docs/auth/social-auth/github for setup instructions):
+      // gitHub: {
+      //   userSignupFields: import { getGitHubUserFields } from "@src/auth/userSignupFields",
+      //   configFn: import { getGitHubAuthConfig } from "@src/auth/userSignupFields",
+      // },
+      // Uncomment to enable Discord Auth (check https://wasp.sh/docs/auth/social-auth/discord for setup instructions):
+      // discord: {
+      //   userSignupFields: import { getDiscordUserFields } from "@src/auth/userSignupFields",
+      //   configFn: import { getDiscordAuthConfig } from "@src/auth/userSignupFields"
+      // }
+    },
+    onAuthFailedRedirectTo: "/login",
+    //onAuthSucceededRedirectTo: "/demo-app",
+    onAuthSucceededRedirectTo: "/invoices",
+  },
+
+  db: {
+    // Run `wasp db seed` to seed the database with the seed functions below:
+    seeds: [
+      // Populates the database with a bunch of fake users to work with during development.
+      import { seedMockUsers } from "@src/server/scripts/dbSeeds",
+      import { seedMultiTenantData } from "@src/server/scripts/seedMultiTenant",
+    ]
+  },
+
+  client: {
+    rootComponent: import App from "@src/client/App",
+  },
+
+  emailSender: {
+    // NOTE: "Dummy" provider is just for local development purposes.
+    //   Make sure to check the server logs for the email confirmation url (it will not be sent to an address)!
+    //   Once you are ready for production, switch to e.g. "SendGrid" or "Mailgun" providers. Check out https://docs.opensaas.sh/guides/email-sending/ .
+    provider: SendGrid,
+    defaultFrom: {
+      name: "Invoice Processor",
+      // When using a real provider, e.g. SendGrid, you must use the same email address that you configured your account to send out emails with!
+      email: "aish@stronexcapital.com"
+    },
+  },
+}
+
+route LandingPageRoute { path: "/", to: LandingPage }
+page LandingPage {
+  component: import LandingPage from "@src/landing/LandingPage"
+}
+//page LandingPage {
+//  component: import LandingPage from "@src/landing-page/LandingPage"
+//}
+
+//#region Auth Pages
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import Login from "@src/auth/LoginPage"
+}
+
+route SignupRoute { path: "/signup", to: SignupPage }
+page SignupPage {
+  component: import { Signup } from "@src/auth/SignupPage"
+}
+
+route RequestPasswordResetRoute { path: "/request-password-reset", to: RequestPasswordResetPage }
+page RequestPasswordResetPage {
+  component: import { RequestPasswordResetPage } from "@src/auth/email-and-pass/RequestPasswordResetPage",
+}
+
+route PasswordResetRoute { path: "/password-reset", to: PasswordResetPage }
+page PasswordResetPage {
+  component: import { PasswordResetPage } from "@src/auth/email-and-pass/PasswordResetPage",
+}
+
+route EmailVerificationRoute { path: "/email-verification", to: EmailVerificationPage }
+page EmailVerificationPage {
+  component: import { EmailVerificationPage } from "@src/auth/email-and-pass/EmailVerificationPage",
+}
+//#endregion
+
+//#region User
+route AccountRoute { path: "/account", to: AccountPage }
+page AccountPage {
+  authRequired: true,
+  component: import Account from "@src/user/AccountPage"
+}
+
+query getPaginatedUsers {
+  fn: import { getPaginatedUsers } from "@src/user/operations",
+  entities: [User]
+}
+
+action updateIsUserAdminById {
+  fn: import { updateIsUserAdminById } from "@src/user/operations",
+  entities: [User]
+}
+//#endregion
+
+//#region Demo AI App
+route DemoAppRoute { path: "/demo-app", to: DemoAppPage }
+page DemoAppPage {
+  authRequired: true,
+  component: import DemoAppPage from "@src/demo-ai-app/DemoAppPage"
+}
+
+// ============================================
+// LANDING & DASHBOARD PAGES
+// ============================================
+
+//page LandingPage {
+//  component: import { default } from "@src/landing/LandingPage"
+//}
+
+//page DashboardPage {
+//  component: import { default } from "@src/dashboard/DashboardPage"
+//}
+
+// Routes
+// Dashboard route (accessible to all users)
+route LandingRoute { path: "/", to: LandingPage }
+route DashboardRoute { path: "/dashboard", to: AdminDashboardPage }
+
+// ============================================
+// INVOICES AND PURCHASE ORDER ROUTES
+// ============================================
+
+route InvoicesRoute { path: "/invoices", to: InvoicesPage }
+page InvoicesPage {
+  authRequired: true,
+  component: import InvoicesPage from "@src/invoice/pages/InvoicesPage"
+}
+route PurchaseOrdersRoute { path: "/purchase-orders", to: PurchaseOrdersPage }
+page PurchaseOrdersPage {
+  authRequired: true,
+  component: import PurchaseOrdersPage from "@src/purchaseOrder/pages/PurchaseOrdersPage"
+}
+
+route CreatePurchaseOrderRoute { path: "/purchase-orders/new", to: CreatePurchaseOrderPage }
+page CreatePurchaseOrderPage {
+  authRequired: true,
+  component: import CreatePurchaseOrderPage from "@src/purchaseOrder/pages/CreatePurchaseOrderPage"
+}
+
+route PurchaseOrderDetailRoute { path: "/purchase-orders/:id", to: PurchaseOrderDetailPage }
+page PurchaseOrderDetailPage {
+  authRequired: true,
+  component: import PurchaseOrderDetailPage from "@src/purchaseOrder/pages/PurchaseOrderDetailPage"
+}
+route EditPurchaseOrderRoute { path: "/purchase-orders/:id/edit", to: EditPurchaseOrderPage }
+page EditPurchaseOrderPage {
+  authRequired: true,
+  component: import EditPurchaseOrderPage from "@src/purchaseOrder/pages/EditPurchaseOrderPage"
+}
+route ApprovalsRoute { path: "/approvals", to: ApprovalsPage }
+page ApprovalsPage {
+  authRequired: true,
+  component: import ApprovalsPage from "@src/purchaseOrder/pages/ApprovalsPage"
+}
+
+route CreateManualInvoiceRoute { path: "/invoices/new", to: CreateManualInvoicePage }
+page CreateManualInvoicePage {
+  authRequired: true,
+  component: import CreateManualInvoicePage from "@src/invoice/pages/CreateManualInvoicePage"
+}
+
+route ManualInvoicesRoute { path: "/invoices/manual", to: ManualInvoicesPage }
+page ManualInvoicesPage {
+  authRequired: true,
+  component: import ManualInvoicesPage from "@src/invoice/pages/ManualInvoicesPage"
+}
+
+route ManualInvoiceDetailRoute { path: "/invoices/manual/:id", to: ManualInvoiceDetailPage }
+page ManualInvoiceDetailPage {
+  authRequired: true,
+  component: import ManualInvoiceDetailPage from "@src/invoice/pages/ManualInvoiceDetailPage"
+}
+
+// Update the route for unified invoice detail
+route InvoiceDetailRoute { path: "/invoices/:id", to: InvoiceDetailPage }
+page InvoiceDetailPage {
+  component: import { default } from "@src/invoice/pages/InvoiceDetailPage"
+}
+
+action generateGptResponse {
+  fn: import { generateGptResponse } from "@src/demo-ai-app/operations",
+  entities: [User, Task, GptResponse]
+}
+
+action createTask {
+  fn: import { createTask } from "@src/demo-ai-app/operations",
+  entities: [Task]
+}
+
+action deleteTask {
+  fn: import { deleteTask } from "@src/demo-ai-app/operations",
+  entities: [Task]
+}
+
+action updateTask {
+  fn: import { updateTask } from "@src/demo-ai-app/operations",
+  entities: [Task]
+}
+
+query getGptResponses {
+  fn: import { getGptResponses } from "@src/demo-ai-app/operations",
+  entities: [User, GptResponse]
+}
+
+query getAllTasksByUser {
+  fn: import { getAllTasksByUser } from "@src/demo-ai-app/operations",
+  entities: [Task]
+}
+//#endregion
+
+//#region Payment
+route PricingPageRoute { path: "/pricing", to: PricingPage }
+page PricingPage {
+  component: import PricingPage from "@src/payment/PricingPage"
+}
+
+route CheckoutResultRoute { path: "/checkout", to: CheckoutResultPage }
+page CheckoutResultPage {
+  authRequired: true,
+  component: import CheckoutResultPage from "@src/payment/CheckoutResultPage"
+}
+
+query getCustomerPortalUrl {
+  fn: import { getCustomerPortalUrl } from  "@src/payment/operations",
+  entities: [User]
+}
+
+action generateCheckoutSession {
+  fn: import { generateCheckoutSession } from "@src/payment/operations",
+  entities: [User]
+}
+
+api paymentsWebhook {
+  fn: import { paymentsWebhook } from "@src/payment/webhook",
+  entities: [User],
+  middlewareConfigFn: import { paymentsMiddlewareConfigFn } from "@src/payment/webhook",
+  httpRoute: (POST, "/payments-webhook")
+}
+//#endregion
+
+//#region File Upload
+route FileUploadRoute { path: "/file-upload", to: FileUploadPage }
+page FileUploadPage {
+  authRequired: true,
+  component: import FileUpload from "@src/file-upload/FileUploadPage"
+}
+
+action createFile {
+  fn: import { createFile } from "@src/file-upload/operations",
+  entities: [User, File]
+}
+
+query getAllFilesByUser {
+  fn: import { getAllFilesByUser } from "@src/file-upload/operations",
+  entities: [User, File]
+}
+
+query getDownloadFileSignedURL {
+  fn: import { getDownloadFileSignedURL } from "@src/file-upload/operations",
+  entities: [User, File]
+}
+//#endregion
+
+//#region Analytics
+query getDailyStats {
+  fn: import { getDailyStats } from "@src/analytics/operations",
+  entities: [User, DailyStats]
+}
+
+job dailyStatsJob {
+  executor: PgBoss,
+  perform: {
+    fn: import { calculateDailyStats } from "@src/analytics/stats"
+  },
+  schedule: {
+    cron: "0 * * * *" // every hour. useful in production
+    // cron: "* * * * *" // every minute. useful for debugging
+  },
+  entities: [User, DailyStats, Logs, PageViewSource]
+}
+//#endregion
+
+//#region Admin Dashboard
+//route AdminRoute { path: "/admin", to: AnalyticsDashboardPage }
+//page AnalyticsDashboardPage {
+//  authRequired: true,
+//  component: import AnalyticsDashboardPage from "@src/admin/dashboards/analytics/AnalyticsDashboardPage"
+//}
+
+//route AdminUsersRoute { path: "/admin/users", to: AdminUsersPage }
+//page AdminUsersPage {
+//  authRequired: true,
+//  component: import AdminUsers from "@src/admin/dashboards/users/UsersDashboardPage"
+//}
+
+route AdminSettingsRoute { path: "/admin/settings", to: AdminSettingsPage }
+page AdminSettingsPage {
+  authRequired: true,
+  component: import AdminSettings from "@src/admin/elements/settings/SettingsPage"
+}
+
+route AdminCalendarRoute { path: "/admin/calendar", to: AdminCalendarPage }
+page AdminCalendarPage {
+  authRequired: true,
+  component: import AdminCalendar from "@src/admin/elements/calendar/CalendarPage"
+}
+
+
+route AdminUIButtonsRoute { path: "/admin/ui/buttons", to: AdminUIButtonsPage }
+page AdminUIButtonsPage {
+  authRequired: true,
+  component: import AdminUI from "@src/admin/elements/ui-elements/ButtonsPage"
+}
+
+route NotFoundRoute { path: "*", to: NotFoundPage }
+page NotFoundPage {
+  component: import { NotFoundPage } from "@src/client/components/NotFoundPage"
+}
+//#endregion
+
+//#region Contact Form Messages
+// TODO: 
+// add functionality to allow users to send messages to admin
+// and make them accessible via the admin dashboard
+route AdminMessagesRoute { path: "/admin/messages", to: AdminMessagesPage }
+page AdminMessagesPage {
+  authRequired: true,
+  component: import AdminMessages from "@src/admin/dashboards/messages/MessagesPage"
+}
+// ============================================
+// ADMIN ROUTES
+// ============================================
+
+route AdminDashboardRoute { path: "/admin", to: AdminDashboardPage }
+page AdminDashboardPage {
+  authRequired: true,
+  component: import AdminDashboardPage from "@src/admin/pages/AdminDashboardPage"
+}
+
+route AdminUsersManagementRoute { path: "/admin/users", to: AdminUsersManagementPage }
+page AdminUsersManagementPage {
+  authRequired: true,
+  component: import UserManagementPage from "@src/admin/pages/UserManagementPage"
+}
+
+route AdminConfigurationRoute { path: "/admin/configuration", to: AdminConfigurationPage }
+page AdminConfigurationPage {
+  authRequired: true,
+  component: import ConfigurationPage from "@src/admin/pages/ConfigurationPage"
+}
+
+route AcceptInvitationRoute { path: "/accept-invitation", to: AcceptInvitationPage }
+page AcceptInvitationPage {
+  component: import { AcceptInvitationPage } from "@src/auth/AcceptInvitationPage"
+}
+
+// ============================================
+// INVOICE OPERATIONS
+// ============================================
+
+action getUploadUrl {
+  fn: import { getUploadUrl } from "@src/invoice/operations/uploadInvoice",
+  entities: [User]
+}
+query getSignedUploadUrl {
+  fn: import { getSignedUploadUrl } from "@src/invoice/operations/fileUploadOperations",
+  entities: []
+}
+
+action createInvoice {
+  fn: import { createInvoice } from "@src/invoice/operations/createInvoice",
+  entities: [User, Invoice, ProcessingJob]
+}
+action processPendingInvoice {
+  fn: import { processPendingInvoice } from "@src/invoice/operations/processInvoice",
+  entities: [User, Invoice, ProcessingJob, InvoiceLineItem]
+}
+query getUserInvoices {
+  fn: import { getUserInvoices } from "@src/invoice/operations/getInvoices",
+  entities: [User, Invoice]
+}
+action deleteInvoice {
+  fn: import { deleteInvoice } from "@src/invoice/operations/deleteInvoice",
+  entities: [User, Invoice, InvoiceLineItem, ProcessingJob]
+}
+action buyCredits {
+  fn: import { buyCredits } from "@src/invoice/operations/buyCredits",
+  entities: [User]
+}
+
+// ============================================
+// MANUAL INVOICE OPERATIONS (for PO matching)
+// ============================================
+
+action createManualInvoice {
+  fn: import { createManualInvoice } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, InvoiceLineItem, PurchaseOrder, Notification]
+}
+
+action updateManualInvoice {
+  fn: import { updateManualInvoice } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, InvoiceLineItem]
+}
+
+action markInvoicePaid {
+  fn: import { markInvoicePaid } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, Notification]
+}
+
+action deleteManualInvoice {
+  fn: import { deleteManualInvoice } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, InvoiceLineItem, PurchaseOrder]
+}
+
+query getApprovedPOsWithoutInvoices {
+  fn: import { getApprovedPOsWithoutInvoices } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, PurchaseOrder, User, ExpenseType, POLineItem, Property, GLAccount]
+}
+
+query getManualInvoices {
+  fn: import { getManualInvoices } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, InvoiceLineItem]
+}
+
+query getInvoiceById {
+  fn: import { getInvoiceById } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, InvoiceLineItem, PurchaseOrder]
+}
+
+// Get all invoices (org-wide)
+query getAllInvoices {
+  fn: import { getAllInvoices } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, InvoiceLineItem, PurchaseOrder, User]
+}
+
+// Update invoice
+action updateInvoice {
+  fn: import { updateInvoice } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, InvoiceLineItem, PurchaseOrder, Notification, User]
+}
+
+// Link invoice to PO
+action linkInvoiceToPO {
+  fn: import { linkInvoiceToPO } from "@src/invoice/operations/poInvoiceOperations",
+  entities: [Invoice, PurchaseOrder, Notification, User]
+}
+
+
+// ============================================
+// ORGANIZATION OPERATIONS
+// ============================================
+
+query getUserOrganization {
+  fn: import { getUserOrganization } from "@src/organization/operations",
+  entities: [Organization, User, Property, GLAccount, ExpenseType]
+}
+
+action updateOrganization {
+  fn: import { updateOrganization } from "@src/organization/operations",
+  entities: [Organization]
+}
+
+// ============================================
+// USER MANAGEMENT OPERATIONS
+// ============================================
+
+action inviteUserToOrganization {
+  fn: import { inviteUserToOrganization } from "@src/user/userManagement",
+  entities: [User]
+}
+
+action acceptInvitation {
+  fn: import { acceptInvitation } from "@src/user/userManagement",
+  entities: [User]
+}
+
+action updateUserRole {
+  fn: import { updateUserRole } from "@src/user/userManagement",
+  entities: [User, Notification]
+}
+
+query getUsersByRole {
+  fn: import { getUsersByRole } from "@src/user/userManagement",
+  entities: [User]
+}
+
+action removeUserFromOrganization {
+  fn: import { removeUserFromOrganization } from "@src/user/userManagement",
+  entities: [User]
+}
+// ============================================
+// CONFIGURATION OPERATIONS
+// ============================================
+
+// Properties
+action createProperty {
+  fn: import { createProperty } from "@src/config/operations",
+  entities: [Property]
+}
+
+query getProperties {
+  fn: import { getProperties } from "@src/config/operations",
+  entities: [Property]
+}
+
+action updateProperty {
+  fn: import { updateProperty } from "@src/config/operations",
+  entities: [Property]
+}
+
+action deleteProperty {
+  fn: import { deleteProperty } from "@src/config/operations",
+  entities: [Property]
+}
+
+// GL Accounts
+action createGLAccount {
+  fn: import { createGLAccount } from "@src/config/operations",
+  entities: [GLAccount]
+}
+
+query getGLAccounts {
+  fn: import { getGLAccounts } from "@src/config/operations",
+  entities: [GLAccount]
+}
+
+action updateGLAccount {
+  fn: import { updateGLAccount } from "@src/config/operations",
+  entities: [GLAccount]
+}
+
+action deleteGLAccount {
+  fn: import { deleteGLAccount } from "@src/config/operations",
+  entities: [GLAccount]
+}
+
+// Expense Types
+action createExpenseType {
+  fn: import { createExpenseType } from "@src/config/operations",
+  entities: [ExpenseType]
+}
+
+query getExpenseTypes {
+  fn: import { getExpenseTypes } from "@src/config/operations",
+  entities: [ExpenseType]
+}
+
+action updateExpenseType {
+  fn: import { updateExpenseType } from "@src/config/operations",
+  entities: [ExpenseType]
+}
+
+action deleteExpenseType {
+  fn: import { deleteExpenseType } from "@src/config/operations",
+  entities: [ExpenseType]
+}
+// ============================================
+// PURCHASE ORDER OPERATIONS
+// ============================================
+
+action createPurchaseOrder {
+  fn: import { createPurchaseOrder } from "@src/purchaseOrder/operations",
+  entities: [PurchaseOrder, POLineItem, ApprovalStep, Organization]
+}
+
+query getPurchaseOrders {
+  fn: import { getPurchaseOrders } from "@src/purchaseOrder/operations",
+  entities: [PurchaseOrder, POLineItem, User, ExpenseType, Property, GLAccount, ApprovalStep]
+}
+
+query getPurchaseOrder {
+  fn: import { getPurchaseOrder } from "@src/purchaseOrder/operations",
+  entities: [PurchaseOrder, POLineItem, User, ExpenseType, Property, GLAccount, ApprovalStep, Invoice]
+}
+
+action updatePurchaseOrder {
+  fn: import { updatePurchaseOrder } from "@src/purchaseOrder/operations",
+  entities: [PurchaseOrder, POLineItem]
+}
+
+action submitPurchaseOrderForApproval {
+  fn: import { submitPurchaseOrderForApproval } from "@src/purchaseOrder/operations",
+  entities: [PurchaseOrder, ApprovalStep]
+}
+
+action deletePurchaseOrder {
+  fn: import { deletePurchaseOrder } from "@src/purchaseOrder/operations",
+  entities: [PurchaseOrder]
+}
+
+action cancelPurchaseOrder {
+  fn: import { cancelPurchaseOrder } from "@src/purchaseOrder/operations",
+  entities: [PurchaseOrder]
+}
+
+query getPurchaseOrderTemplates {
+  fn: import { getPurchaseOrderTemplates } from "@src/purchaseOrder/operations",
+  entities: [PurchaseOrder, POLineItem, ExpenseType, Property, GLAccount]
+}
+
+action createPurchaseOrderFromTemplate {
+  fn: import { createPurchaseOrderFromTemplate } from "@src/purchaseOrder/operations",
+  entities: [PurchaseOrder, POLineItem, ApprovalStep, Organization]
+}
+// ============================================
+// APPROVAL OPERATIONS
+// ============================================
+
+action approvePurchaseOrder {
+  fn: import { approvePurchaseOrder } from "@src/purchaseOrder/approvalOperations",
+  entities: [PurchaseOrder, ApprovalStep, ApprovalAction, Notification]
+}
+
+action rejectPurchaseOrder {
+  fn: import { rejectPurchaseOrder } from "@src/purchaseOrder/approvalOperations",
+  entities: [PurchaseOrder, ApprovalStep, ApprovalAction, Notification]
+}
+
+query getPendingApprovals {
+  fn: import { getPendingApprovals } from "@src/purchaseOrder/approvalOperations",
+  entities: [PurchaseOrder, User, ExpenseType, ApprovalStep]
+}
+
+query getMyApprovalHistory {
+  fn: import { getMyApprovalHistory } from "@src/purchaseOrder/approvalOperations",
+  entities: [ApprovalAction, User]
+}
+//#endregion

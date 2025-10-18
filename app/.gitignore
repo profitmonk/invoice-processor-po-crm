@@ -1,0 +1,6 @@
+node_modules/
+.wasp/
+gcp-service-account-key.json
+.env.server
+installFlySecrets.sh
+gcp-key-base64.txt

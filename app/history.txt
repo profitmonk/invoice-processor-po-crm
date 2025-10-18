@@ -1,0 +1,145 @@
+ 1001  cd ~/Documents/projects
+ 1002  ls -lrt
+ 1003  git clone https://github.com/profitmonk/invoice-processor invoice-processor-po
+ 1004  git clone https://github.com/profitmonk/invoice-processor invoice-processor-po
+ 1005  cd invoice-processor-po
+ 1006  rm -rf .git\ngit init\ngit add .\ngit commit -m "Initial commit - cloned from invoice-processor"\n
+ 1007  git remote add origin invoice-processor-po
+ 1008  git push -u origin main
+ 1009  git status
+ 1010  ls
+ 1011  git remote add origin https://github.com/profitmonk/invoice-processor-po.git
+ 1012  git remote set-url origin https://github.com/profitmonk/invoice-processor-po.git
+ 1013  git push -u origin main
+ 1014  git branch -a
+ 1015  git push -u origin master
+ 1016  git checkout master
+ 1017  git branch -M main
+ 1018  git push -u origin main
+ 1019  git push origin --delete master
+ 1020  git branch -r
+ 1021  git push origin --delete master
+ 1022  git checkout -b develop\ngit push -u origin develop
+ 1023  vi app/.env.server.example
+ 1024  less ../invoice-processor/app/.gitignore
+ 1025  cp ../invoice-processor/app/.env.server app/.
+ 1026  vi app/.env.server
+ 1027  vi app/schema.prisma
+ 1028  cp app/.env.server app/1.server
+ 1029  mv app/1.server app/1.txt
+ 1030  cp app/schema.prisma app/2.txt
+ 1031  vi app/schema.prisma
+ 1032  npx wasp db migrate-dev add_multi_tenant_foundation
+ 1033  vi app/src/server/scripts/seedMultiTenant.ts
+ 1034  vi app/main.wasp
+ 1035  npx wasp db migrate-dev add_multi_tenant_foundation
+ 1036  npx wasp db migrate-dev
+ 1037  which wasp
+ 1038  wasp db migrate-dev
+ 1039  ls app/main.wasp
+ 1040  \t(base) aishwaryadubey@AishWaryas-MacBook-Pro invoice-processor-po % ls app/main.wasp\napp/main.wasp
+ 1041  wasp db migrate-dev
+ 1042  cd app
+ 1043  ls -lrt .wasp
+ 1044  ls -lrt .wasproot
+ 1045  wasp db migrate-dev
+ 1046  vi src/server/scripts/dbSeeds.ts
+ 1047  vi main.wasp
+ 1048  wasp db migrate-dev
+ 1049  vi src/server/scripts/dbSeeds.ts
+ 1050  vi 1
+ 1051  diff 1 src/server/scripts/dbSeeds.ts\n
+ 1052  mv 1 src/server/scripts/dbSeeds.ts
+ 1053  wasp db migrate-dev
+ 1054  vi main.wasp
+ 1055  wasp db migrate-dev
+ 1056  vi app/schema.prisma
+ 1057  vi schema.prisma
+ 1058  wasp db migrate-dev
+ 1059  wasp db seed
+ 1060  vi app/src/server/scripts/seedMultiTenant.ts
+ 1061  vi src/server/scripts/seedMultiTenant.ts
+ 1062  vi 1
+ 1063  diff 1 src/server/scripts/seedMultiTenant.ts
+ 1064  vi 1
+ 1065  mv 1 src/server/scripts/seedMultiTenant.ts
+ 1066  wasp db seed
+ 1067  vi src/server/auth/permissions.ts
+ 1068  pwd
+ 1069  mkdir src/server/auth
+ 1070  vi src/server/auth/permissions.ts
+ 1071  ls src/organization
+ 1072  mkdir src/organization
+ 1073  vi src/organization/operations.ts
+ 1074  vi src/user/userManagement.ts
+ 1075  vi main.wasp
+ 1076  vi main.wasp
+ 1077  ls src/admin
+ 1078  mkdir src/admin/pages
+ 1079  vi src/admin/pages/UserManagementPage.tsx
+ 1080  vi src/auth/AcceptInvitationPage.tsx
+ 1081  mkdir src/config
+ 1082  vi src/config/operations.ts
+ 1083  vi main.wasp
+ 1084  ls src/admin/pages
+ 1085  vi src/admin/pages/ConfigurationPage.tsx
+ 1086  vi src/admin/components/config/PropertiesTab.tsx
+ 1087  mkdir -p src/admin/components/config
+ 1088  vi src/admin/components/config/PropertiesTab.tsx
+ 1089  vi src/admin/components/config/GLAccountsTab.tsx 
+ 1090  vi src/admin/components/config/ExpenseTypesTab.tsx
+ 1091  vi src/admin/components/AdminLayout.tsx
+ 1092  vi src/admin/pages/AdminDashboardPage.tsx
+ 1093  vi main.wasp
+ 1094  git status
+ 1095  history
+ 1096  history 0|less
+ 1097  ls src/admin/components/config/ExpenseTypesTab.tsx
+ 1098  ls src/admin/components/AdminLayout.tsx
+ 1099  wasp start
+ 1100  vi src/admin/pages/AdminDashboardPage.tsx
+ 1101  vi src/admin/pages/AdminDashboardPage.tsx
+ 1102  wasp start
+ 1103  vi src/admin/pages/AdminDashboardPage.tsx
+ 1104  vi 1
+ 1105  diff 1 src/admin/pages/AdminDashboardPage.tsx
+ 1106  mv 1 src/admin/pages/AdminDashboardPage.tsx
+ 1107  wasp start
+ 1108  npx shadcn-ui@latest add dialog\nnpx shadcn-ui@latest add table\nnpx shadcn-ui@latest add tabs
+ 1109  vi src/admin/components/AdminLayout.tsx
+ 1110  vi src/auth/AcceptInvitationPage.tsx
+ 1111  vi 1
+ 1112  diff 1 src/auth/AcceptInvitationPage.tsx
+ 1113  mv 1 src/auth/AcceptInvitationPage.tsx
+ 1114  vi 1
+ 1115  diff 1 src/server/auth/permissions.ts
+ 1116  mv 1 src/server/auth/permissions.ts
+ 1117  vi src/user/userManagement.ts
+ 1118  wasp start
+ 1119  history
+ 1120  vi src/admin/components/AdminLayout.tsx
+ 1121  wasp start
+ 1122  npx shadcn-ui@latest add dialog\nnpx shadcn-ui@latest add table\nnpx shadcn-ui@latest add tabs
+ 1123  shadcn-ui
+ 1124  ls src/components/ui
+ 1125  npx shadcn@latest add dialog\nnpx shadcn@latest add table\nnpx shadcn@latest add tabs
+ 1126  wasp start
+ 1127  vi src/components/ui/dialog.tsx
+ 1128  vi src/components/ui/table.tsx
+ 1129  vi src/components/ui/tabs.tsx
+ 1130  wasp start
+ 1131  wasp start
+ 1132  vi main.wasp
+ 1133  wasp start
+ 1134  vi main.wasp
+ 1135  # Check if the user exists and get their current status\npsql invoice_processor_po -c "SELECT id, email, \"isEmailVerified\", role, \"isAdmin\", \"organizationId\" FROM \"User\" WHERE email = 'admin2@demo.com'"
+ 1136  # Check if the user exists and get their current status\npsql invoice_processor -c "SELECT id, email, \"isEmailVerified\", role, \"isAdmin\", \"organizationId\" FROM \"User\" WHERE email = 'admin2@demo.com'"
+ 1137  vi .env.server
+ 1138  psql -l
+ 1139  psql invoice_processor -c "SELECT id, email, \"isEmailVerified\", role, \"isAdmin\", \"organizationId\" FROM \"User\" WHERE email = 'admin2@demo.com'"
+ 1140  psql invoice_processor -c "\d \"User\""
+ 1141  psql invoice_processor -c "\d \"Auth\""\n\n# Find the auth record for this user\npsql invoice_processor -c "SELECT * FROM \"Auth\" WHERE \"userId\" = (SELECT id FROM \"User\" WHERE email = 'admin2@demo.com')"
+ 1142  # Check AuthIdentity table structure\npsql invoice_processor -c "\d \"AuthIdentity\""\n\n# Get the auth identity for this user\npsql invoice_processor -c "SELECT * FROM \"AuthIdentity\" WHERE \"authId\" = (SELECT id FROM \"Auth\" WHERE \"userId\" = (SELECT id FROM \"User\" WHERE email = 'admin2@demo.com'))"
+ 1143  # Update the isEmailVerified to true in the JSON\npsql invoice_processor -c "UPDATE \"AuthIdentity\" SET \"providerData\" = jsonb_set(\"providerData\"::jsonb, '{isEmailVerified}', 'true')::text WHERE \"providerName\" = 'email' AND \"providerUserId\" = 'admin2@demo.com'"\n\n# Verify the update\npsql invoice_processor -c "SELECT \"providerName\", \"providerUserId\", \"providerData\" FROM \"AuthIdentity\" WHERE \"providerUserId\" = 'admin2@demo.com'"
+ 1144  wasp start
+ 1145  history 0|less

@@ -1,0 +1,542 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================
+// MULTI-TENANT & ORGANIZATION
+// ============================================
+
+model Organization {
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  name          String
+  code          String   @unique
+  
+  poApprovalThreshold Float @default(500)
+  
+  users         User[]
+  properties    Property[]
+  glAccounts    GLAccount[]
+  expenseTypes  ExpenseType[]
+  purchaseOrders PurchaseOrder[]
+  
+  @@index([code])
+}
+
+// ============================================
+// EXTENDED USER MODEL
+// ============================================
+
+model User {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt @default(now())
+
+  email                     String?         @unique
+  username                  String?         @unique
+  
+  // Multi-tenant
+  organizationId            String?
+  organization              Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Role-based access
+  role                      UserRole        @default(USER)
+  isAdmin                   Boolean         @default(false)
+  
+  // Onboarding
+  hasCompletedOnboarding    Boolean         @default(false)
+  invitedById               String?
+  invitedBy                 User?           @relation("UserInvitations", fields: [invitedById], references: [id])
+  invitedUsers              User[]          @relation("UserInvitations")
+  invitationToken           String?         @unique
+  invitationExpiresAt       DateTime?
+  
+  // Phone for SMS
+  phoneNumber               String?
+
+  // Payment (existing)
+  paymentProcessorUserId    String?         @unique
+  lemonSqueezyCustomerPortalUrl String?
+  subscriptionStatus        String?
+  subscriptionPlan          String?
+  datePaid                  DateTime?
+  credits                   Int             @default(3)
+
+  // Existing relationships
+  gptResponses              GptResponse[]
+  contactFormMessages       ContactFormMessage[]
+  tasks                     Task[]
+  files                     File[]
+  invoices                  Invoice[]
+  
+  // New PO relationships
+  createdPurchaseOrders     PurchaseOrder[] @relation("POCreator")
+  approvalSteps             ApprovalStep[]
+  approvalActions           ApprovalAction[]
+  notifications             Notification[]
+  
+  @@index([organizationId])
+  @@index([role])
+  @@index([invitationToken])
+}
+
+enum UserRole {
+  USER
+  PROPERTY_MANAGER
+  ACCOUNTING
+  CORPORATE
+  ADMIN
+}
+
+// ============================================
+// CONFIGURATION MODELS
+// ============================================
+
+model Property {
+  id              String   @id @default(uuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  code            String
+  name            String
+  address         String?
+  isActive        Boolean  @default(true)
+  
+  poLineItems     POLineItem[]
+  
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+model GLAccount {
+  id              String   @id @default(uuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  accountNumber   String
+  name            String
+  accountType     AccountType
+  isActive        Boolean  @default(true)
+  
+  annualBudget    Float?
+  
+  poLineItems     POLineItem[]
+  
+  @@unique([organizationId, accountNumber])
+  @@index([organizationId])
+  @@index([accountType])
+  @@index([isActive])
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+model ExpenseType {
+  id              String   @id @default(uuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  name            String
+  code            String
+  isActive        Boolean  @default(true)
+  
+  purchaseOrders  PurchaseOrder[]
+  
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+// ============================================
+// PURCHASE ORDER MODELS
+// ============================================
+
+model PurchaseOrder {
+  id              String        @id @default(uuid())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  organizationId  String
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdById     String
+  createdBy       User          @relation("POCreator", fields: [createdById], references: [id])
+  
+  poNumber        String
+  vendor          String
+  description     String        @db.Text
+  
+  expenseTypeId   String
+  expenseType     ExpenseType   @relation(fields: [expenseTypeId], references: [id])
+  
+  poDate          DateTime      @default(now())
+  
+  status          POStatus      @default(DRAFT)
+  
+  subtotal        Float         @default(0)
+  taxAmount       Float         @default(0)
+  totalAmount     Float         @default(0)
+  
+  isTemplate      Boolean       @default(false)
+  templateName    String?
+  
+  requiresApproval Boolean      @default(false)
+  currentApprovalStep Int?
+  
+  lineItems       POLineItem[]
+  approvalSteps   ApprovalStep[]
+  linkedInvoice   Invoice?      @relation(fields: [linkedInvoiceId], references: [id])
+  linkedInvoiceId String?       @unique
+  
+  @@unique([organizationId, poNumber])
+  @@index([organizationId])
+  @@index([createdById])
+  @@index([status])
+  @@index([requiresApproval])
+}
+
+enum POStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  CANCELLED
+  INVOICED
+}
+
+model POLineItem {
+  id              String        @id @default(uuid())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  
+  lineNumber      Int
+  description     String
+  
+  propertyId      String
+  property        Property      @relation(fields: [propertyId], references: [id])
+  
+  glAccountId     String
+  glAccount       GLAccount     @relation(fields: [glAccountId], references: [id])
+  
+  quantity        Float         @default(1)
+  unitPrice       Float
+  taxAmount       Float         @default(0)
+  totalAmount     Float
+  
+  @@index([purchaseOrderId])
+  @@index([propertyId])
+  @@index([glAccountId])
+}
+
+// ============================================
+// APPROVAL WORKFLOW
+// ============================================
+
+model ApprovalStep {
+  id              String         @id @default(uuid())
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  
+  stepNumber      Int
+  stepName        String
+  requiredRole    UserRole
+  
+  status          ApprovalStatus @default(PENDING)
+  
+  approvedById    String?
+  approvedBy      User?          @relation(fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  comment         String?        @db.Text
+  
+  notificationSentAt DateTime?
+  
+  @@index([purchaseOrderId])
+  @@index([status])
+  @@index([stepNumber])
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SKIPPED
+}
+
+model ApprovalAction {
+  id              String    @id @default(uuid())
+  createdAt       DateTime  @default(now())
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  
+  purchaseOrderId String
+  stepNumber      Int
+  action          String
+  comment         String?   @db.Text
+  ipAddress       String?
+  userAgent       String?
+  
+  @@index([userId])
+  @@index([purchaseOrderId])
+  @@index([createdAt])
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id              String           @id @default(uuid())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type            NotificationType
+  title           String
+  message         String           @db.Text
+  
+  actionUrl       String?
+  
+  purchaseOrderId String?
+  invoiceId       String?
+  
+  read            Boolean          @default(false)
+  readAt          DateTime?
+  
+  emailSent       Boolean          @default(false)
+  emailSentAt     DateTime?
+  smsSent         Boolean          @default(false)
+  smsSentAt       DateTime?
+  
+  @@index([userId])
+  @@index([read])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  PO_APPROVAL_NEEDED
+  PO_APPROVED
+  PO_REJECTED
+  PO_CANCELLED
+  INVOICE_PO_MISMATCH
+  USER_INVITED
+  ROLE_CHANGED
+}
+
+enum InvoiceEntryType {
+  OCR
+  MANUAL
+  OCR_CORRECTED
+}
+
+// ============================================
+// EXISTING INVOICE MODELS (UPDATED)
+// ============================================
+
+model Invoice { 
+  id                  String          @id @default(uuid())
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String
+ 
+  fileName            String
+  fileSize            Int
+  fileUrl             String
+  mimeType            String
+
+  status              InvoiceStatus   @default(UPLOADED)
+  entryType           InvoiceEntryType @default(MANUAL)
+  
+  ocrText             String?         @db.Text
+  ocrConfidence       Float?  
+  ocrProcessedAt      DateTime?
+  
+  structuredData      Json?   
+  llmProcessedAt      DateTime?
+  
+  vendorName          String? 
+  invoiceNumber       String? 
+  invoiceDate         DateTime?
+  totalAmount         Float?
+  currency            String?         @default("USD")
+
+  // FIX: Add the foreign key and proper relation
+  //purchaseOrderId     String?
+  linkedPurchaseOrder PurchaseOrder?
+
+  errorMessage        String?         @db.Text
+  failedAt            DateTime?
+
+  lineItems           InvoiceLineItem[]
+  processingJob       ProcessingJob?
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum InvoiceStatus {
+  UPLOADED
+  PAYMENT_REQUIRED
+  QUEUED
+  PROCESSING_OCR
+  PROCESSING_LLM
+  COMPLETED
+  FAILED
+}
+
+model InvoiceLineItem {
+  id            String      @id @default(uuid())
+  createdAt     DateTime    @default(now())
+  
+  invoice       Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId     String
+  
+  description   String
+  quantity      Float?
+  unitPrice     Float?
+  amount        Float?
+  taxAmount     Float?
+  category      String?
+  lineNumber    Int?
+  
+  @@index([invoiceId])
+}
+
+model ProcessingJob {
+  id            String      @id @default(uuid())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  invoice       Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId     String      @unique
+  
+  status        JobStatus   @default(PENDING)
+  currentStep   String?
+  
+  attempts      Int         @default(0)
+  maxAttempts   Int         @default(3)
+  
+  startedAt     DateTime?
+  completedAt   DateTime?
+  
+  errorLog      String?     @db.Text
+  lastError     String?
+  
+  @@index([status])
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  RETRYING
+}
+
+// ============================================
+// EXISTING MODELS (UNCHANGED)
+// ============================================
+
+model GptResponse {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+  user                      User            @relation(fields: [userId], references: [id])
+  userId                    String
+  content                   String
+}
+
+model Task {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  user                      User            @relation(fields: [userId], references: [id])
+  userId                    String
+  description               String
+  time                      String          @default("1")
+  isDone                    Boolean         @default(false)
+}
+
+model File {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  user                      User            @relation(fields: [userId], references: [id])
+  userId                    String
+  name                      String
+  type                      String
+  key                       String
+  uploadUrl                 String
+}
+
+model DailyStats {
+  id                               Int             @id @default(autoincrement())
+  date                             DateTime        @default(now()) @unique
+  totalViews                       Int             @default(0)
+  prevDayViewsChangePercent        String          @default("0")
+  userCount                        Int             @default(0)
+  paidUserCount                    Int             @default(0)
+  userDelta                        Int             @default(0)
+  paidUserDelta                    Int             @default(0)
+  totalRevenue                     Float           @default(0)
+  totalProfit                      Float           @default(0)
+  sources                          PageViewSource[]
+}
+
+model PageViewSource {
+  @@id([date, name])
+  name                     String
+  date                     DateTime        @default(now())
+  dailyStats               DailyStats?     @relation(fields: [dailyStatsId], references: [id])
+  dailyStatsId             Int?
+  visitors                 Int
+}
+
+model Logs {
+  id                       Int             @id @default(autoincrement())
+  createdAt                DateTime        @default(now())
+  message                  String
+  level                    String
+}
+
+model ContactFormMessage {
+  id                        String          @id @default(uuid())
+  createdAt                 DateTime        @default(now())
+  user                      User            @relation(fields: [userId], references: [id])
+  userId                    String
+  content                   String
+  isRead                    Boolean         @default(false)
+  repliedAt                 DateTime?
+}

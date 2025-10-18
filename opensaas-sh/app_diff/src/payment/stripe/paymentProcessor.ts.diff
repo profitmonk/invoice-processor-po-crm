@@ -1,0 +1,11 @@
+--- template/app/src/payment/stripe/paymentProcessor.ts
++++ opensaas-sh/app/src/payment/stripe/paymentProcessor.ts
+@@ -32,7 +32,7 @@
+         id: userId,
+       },
+       data: {
+-        paymentProcessorUserId: customer.id,
++        stripeId: customer.id,
+       },
+     });
+     if (!stripeSession.url)

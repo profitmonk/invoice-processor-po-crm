@@ -32,7 +32,7 @@
     "headlessui": "^0.0.0",
     "lucide-react": "^0.525.0",
     "node-fetch": "3.3.0",
-    "openai": "^4.55.3",
+    "openai": "^4.104.0",
     "prettier": "3.1.1",
     "prettier-plugin-tailwindcss": "0.5.11",
     "react": "^18.2.0",
@@ -45,6 +45,7 @@
     "tailwind-merge": "^2.2.1",
     "tailwindcss": "^3.2.7",
     "tailwindcss-animate": "^1.0.7",
+    "twilio": "^4.23.0",
     "vanilla-cookieconsent": "^3.0.1",
     "wasp": "file:.wasp/out/sdk/wasp",
     "zod": "^3.25.76"

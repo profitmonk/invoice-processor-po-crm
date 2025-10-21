@@ -684,4 +684,160 @@ query getMyApprovalHistory {
   fn: import { getMyApprovalHistory } from "@src/purchaseOrder/approvalOperations",
   entities: [ApprovalAction, User]
 }
+
+
+// ============================================
+// CRM ROUTES - ADD THESE
+// ============================================
+
+route ResidentsRoute { path: "/crm/residents", to: ResidentsPage }
+page ResidentsPage {
+  authRequired: true,
+  component: import ResidentsPage from "@src/crm/pages/ResidentsPage"
+}
+
+route ResidentDetailRoute { path: "/crm/residents/:id", to: ResidentDetailPage }
+page ResidentDetailPage {
+  authRequired: true,
+  component: import ResidentDetailPage from "@src/crm/pages/ResidentDetailPage"
+}
+
+route LeadsRoute { path: "/crm/leads", to: LeadsPage }
+page LeadsPage {
+  authRequired: true,
+  component: import LeadsPage from "@src/crm/pages/LeadsPage"
+}
+
+route CampaignManagementRoute { path: "/crm/campaigns", to: CampaignManagementPage }
+page CampaignManagementPage {
+  authRequired: true,
+  component: import CampaignManagementPage from "@src/crm/pages/CampaignManagementPage"
+}
+
+// ============================================
+// RESIDENT OPERATIONS
+// ============================================
+
+query getResidents {
+  fn: import { getResidents } from "@src/crm/operations/residentOperations",
+  entities: [Resident, Property, Organization]
+}
+
+query getResidentById {
+  fn: import { getResidentById } from "@src/crm/operations/residentOperations",
+  entities: [Resident, Property, MaintenanceRequest, Conversation]
+}
+
+action createResident {
+  fn: import { createResident } from "@src/crm/operations/residentOperations",
+  entities: [Resident, Organization, Property]
+}
+
+action updateResident {
+  fn: import { updateResident } from "@src/crm/operations/residentOperations",
+  entities: [Resident]
+}
+
+action deleteResident {
+  fn: import { deleteResident } from "@src/crm/operations/residentOperations",
+  entities: [Resident]
+}
+
+// ============================================
+// LEAD OPERATIONS
+// ============================================
+
+query getLeads {
+  fn: import { getLeads } from "@src/crm/operations/leadOperations",
+  entities: [Lead, Property, User, Organization]
+}
+
+query getLeadById {
+  fn: import { getLeadById } from "@src/crm/operations/leadOperations",
+  entities: [Lead, Property, User, Conversation]
+}
+
+action createLead {
+  fn: import { createLead } from "@src/crm/operations/leadOperations",
+  entities: [Lead, Organization, Property, User]
+}
+
+action updateLead {
+  fn: import { updateLead } from "@src/crm/operations/leadOperations",
+  entities: [Lead]
+}
+
+action updateLeadStatus {
+  fn: import { updateLeadStatus } from "@src/crm/operations/leadOperations",
+  entities: [Lead, Conversation]
+}
+
+action deleteLead {
+  fn: import { deleteLead } from "@src/crm/operations/leadOperations",
+  entities: [Lead]
+}
+
+// ============================================
+// CAMPAIGN OPERATIONS
+// ============================================
+
+action registerPlatformBrand {
+  fn: import { registerPlatformBrandOp } from "@src/crm/operations/campaignOperations",
+  entities: [User, PlatformConfig]
+}
+
+action setupOrganizationCommunication {
+  fn: import { setupOrganizationCommunication } from "@src/crm/operations/campaignOperations",
+  entities: [User, Organization, TwilioPhoneNumber, PlatformConfig]
+}
+
+action checkCampaignStatus {
+  fn: import { checkCampaignStatusOp } from "@src/crm/operations/campaignOperations",
+  entities: [User, Organization]
+}
+
+action checkAllPendingCampaigns {
+  fn: import { checkAllPendingCampaignsOp } from "@src/crm/operations/campaignOperations",
+  entities: [User, Organization]
+}
+
+query getCampaignLimits {
+  fn: import { getCampaignLimitsOp } from "@src/crm/operations/campaignOperations",
+  entities: [Organization]
+}
+
+action suspendOrganizationCampaign {
+  fn: import { suspendOrganizationCampaign } from "@src/crm/operations/campaignOperations",
+  entities: [User, Organization]
+}
+
+action reactivateOrganizationCampaign {
+  fn: import { reactivateOrganizationCampaign } from "@src/crm/operations/campaignOperations",
+  entities: [User, Organization]
+}
+
+// ============================================
+// TWILIO WEBHOOK API ROUTES
+// ============================================
+
+api twilioSmsWebhook {
+  fn: import { handleIncomingSMS } from "@src/crm/twilio/webhooks",
+  entities: [Conversation, Resident, Lead, Organization, Property, User, MaintenanceRequest],
+  middlewareConfigFn: import { twilioMiddlewareConfigFn } from "@src/crm/twilio/webhooks",
+  httpRoute: (POST, "/api/twilio/sms")
+}
+
+api twilioVoiceWebhook {
+  fn: import { handleIncomingVoiceCall } from "@src/crm/twilio/webhooks",
+  entities: [Conversation, Resident, Lead, Organization, User],
+  middlewareConfigFn: import { twilioMiddlewareConfigFn } from "@src/crm/twilio/webhooks",
+  httpRoute: (POST, "/api/twilio/voice")
+}
+
+api twilioStatusCallback {
+  fn: import { handleStatusCallback } from "@src/crm/twilio/webhooks",
+  entities: [Conversation],
+  middlewareConfigFn: import { twilioMiddlewareConfigFn } from "@src/crm/twilio/webhooks",
+  httpRoute: (POST, "/api/twilio/status")
+}
 //#endregion
